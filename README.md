@@ -1,2 +1,2 @@
-# machine-learning-assignments
-Assignments for COL341—machine learning course at IIT Delhi
+# regression
+Implementing various regression algorithms—for COL341.
