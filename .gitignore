@@ -105,6 +105,3 @@ venv.bak/
 
 # PyCharm
 .idea/
-
-# Data
-a1_lin_data/

@@ -1,7 +1,9 @@
 import argparse
 import sys
+import time
 
 import numpy as np
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LassoLars
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import PolynomialFeatures
@@ -60,25 +62,42 @@ def ridge_regression(args):
     np.savetxt(args.weightfile, w)
 
 
-def feature_expansion(x):
-    square = np.array(list(map(lambda i: i ** 2, x.T))).T
-    cube = np.array(list(map(lambda i: i ** 2, x.T))).T
-    mod = np.array(list(map(abs, x.T))).T
-    x = np.hstack((x, square, cube, mod))
-    return x
+class FeatureEngineering:
+    def __init__(self, n1, order, n2):
+        self.n1 = n1
+        self.order = order
+        self.n2 = n2
+        self.pca1 = PCA(n_components=self.n1)
+        self.poly = PolynomialFeatures(self.order)
+        self.pca2 = PCA(n_components=self.n2)
+
+    def fit_transform(self, x):
+        x = self.pca1.fit_transform(x)
+        x = self.poly.fit_transform(x)
+        x = self.pca2.fit_transform(x)
+        return x
+
+    def transform(self, x):
+        x = self.pca1.transform(x)
+        x = self.poly.transform(x)
+        x = self.pca2.transform(x)
+        return x
 
 
 def lasso_regression(args):
+    start = time.time()
     with open(args.trainfile) as f:
         train = np.genfromtxt(f, delimiter=',')
-    x = feature_expansion(train[:, :-1])
+    x = train[:, :-1]
+
+    fe = FeatureEngineering(30, 2, 400)
+    x = fe.fit_transform(x)
     x = np.column_stack((np.ones(x.shape[0], ), x))
     y = train[:, -1]
-    print(x.shape)
 
     kf = KFold(n_splits=10)
     kf.get_n_splits(x)
-    ls = [0.001, 0.003, 0.005, 0.01]
+    ls = [0.003]
     min_error = float('inf')
     min_l = None
 
@@ -90,26 +109,26 @@ def lasso_regression(args):
 
             reg = LassoLars(alpha=l)
             reg.fit(x_train, y_train)
-            error = np.linalg.norm(reg.predict(x_test) - y_test) / (2 * x_test.shape[0])
+            error = (np.linalg.norm(reg.predict(x_test) - y_test) ** 2) / (2 * x_test.shape[0])
             error_sum += error
-        print('l :', l, '. Error: ', error_sum)
         if error_sum < min_error:
             min_error = error_sum
             min_l = l
 
-    print(min_l)
     reg = LassoLars(alpha=min_l)
     reg.fit(x, y)
     w = reg.coef_
     error = (np.linalg.norm(reg.predict(x) - y) ** 2) / (2 * x.shape[0])
-    print(error)
+    print('Lambda: ', min_l, '. Error: ', error)
 
     with open(args.testfile) as f:
         test = np.genfromtxt(f, delimiter=',')
-    x = feature_expansion(test)
+
+    x = fe.transform(test)
     x = np.column_stack((np.ones(test.shape[0], ), x))
     predictions = x @ w
     np.savetxt(args.outputfile, predictions)
+    print('Time: ', time.time() - start)
 
 
 def main():
