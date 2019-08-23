@@ -1,1 +1,2 @@
-a1_lin_data/* filter=lfs diff=lfs merge=lfs -text
+assignment_1/a1_lin_data/train.csv filter=lfs diff=lfs merge=lfs -text
+assignment_1/a1_lin_data/test_X.csv filter=lfs diff=lfs merge=lfs -text
