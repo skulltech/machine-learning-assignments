@@ -1,2 +1,2 @@
-# regression
-Implementing various regression algorithms—for COL341.
+# machine-learning-assignments
+Assignments for COL 341 @ IIT Delhi.
