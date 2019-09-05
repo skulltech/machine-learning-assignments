@@ -4,6 +4,12 @@ import sys
 import math
 
 
+
+def softmax(x):
+    x = np.exp(x)
+    return x / np.sum(x, axis=0)
+
+
 class NeuralNetwork:
     def __init__(self, hidden_layers, feature_size, output_size):
         self.hidden_layers = hidden_layers
@@ -31,6 +37,8 @@ class NeuralNetwork:
             activ = sigmoid(z)
             activs.append(activ)
             prev = activ
+        
+        activs[-1] = softmax(z)
         return activs
 
 
