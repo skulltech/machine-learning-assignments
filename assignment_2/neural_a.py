@@ -4,9 +4,13 @@ import sys
 import math
 
 
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
 class NeuralNetwork:
     def __init__(self, hidden_layers, feature_size, output_size):
-        self.hidden_layers = hidden_layers
         prev = feature_size
         self.weights = []
         self.biases = []
@@ -22,7 +26,6 @@ class NeuralNetwork:
     
 
     def forprop(self, x):
-        sigmoid = lambda x: 1 / (1 + np.exp(-x))
         activs = [x]
         prev = x
     
@@ -60,27 +63,27 @@ class NeuralNetwork:
 
 def neural_network(args):
     with open(args.trainfile) as f:
-        train = np.genfromtxt(f, delimiter=',')
+        train = np.loadtxt(f, delimiter=',')
     x = train[:, :-1]
     y = train[:, -1:]
 
     with open(args.param) as f:
         param = f.readlines()
     strategy = int(param[0])
-    lr = float(param[1])
+    base_lr = float(param[1])
     iterations = int(param[2])
     batch_size = int(param[3])
     hidden_layers = [int(x) for x in param[4].split()]
 
     batches = x.shape[0] // batch_size
     nn = NeuralNetwork(hidden_layers=hidden_layers, feature_size=x.shape[1], output_size=1)
-    
+
     i = 0
     for iter in range(iterations):
         if strategy == 1:
-            lr = lr
+            lr = base_lr
         else:
-            lr = lr / math.sqrt(iter + 1)
+            lr = base_lr / math.sqrt(iter + 1)
         
         xd = x[batch_size*i:batch_size*(i+1), :]
         yd = y[batch_size*i:batch_size*(i+1), :]
