@@ -4,6 +4,7 @@ import sys
 import math
 import time
 from sklearn.preprocessing import LabelBinarizer
+from skimage import feature
 
 
 
@@ -112,10 +113,14 @@ def neural_network(args):
     start = time.time()
 
     with open(args.trainfile) as f:
-        train = np.loadtxt(f, delimiter=',')
+        train = np.loadtxt(f, delimiter=',', dtype=np.uint8)
     x = train[:, :-1]
     ylabels = train[:, -1:]
+
+    edge_detector = lambda x: feature.canny(x.reshape((32, 32))).flatten()
+    x = np.hstack((x, np.apply_along_axis(edge_detector, 1, x)))
     x = x / 255
+    
     lb = LabelBinarizer()
     y = lb.fit_transform(ylabels)
 
@@ -138,7 +143,7 @@ def neural_network(args):
 
     while True:
         lr = HYPERPARAMS['base_lr'] / math.sqrt(epoch + 1)
-        
+
         xd = xtrain[batch_size*i:batch_size*(i+1), :]
         yd = ytrain[batch_size*i:batch_size*(i+1), :]
         nn.train(xd, yd, lr)
@@ -159,19 +164,21 @@ def neural_network(args):
                 ascends = 0
 
             time_elapsed = time.time() - start
-            print(f'Epoch: {epoch}\t Accuracy: {ac}\t Time: {time_elapsed}')
+            print(f'Epoch: {epoch}\t Accuracy: {accuracy(ytest, preds)}\t Time: {time_elapsed}')
             if time_elapsed >  HYPERPARAMS['time']:
                 break
         
         i = i % batches
         iter = iter + 1
     
-    nn.weights, nn.biases = best_wbs
+    nn.weights, nn.biases = best_wbs[0][:], best_wbs[1][:]
 
     with open(args.testfile) as f:
-        test = np.loadtxt(f, delimiter=',')
+        test = np.loadtxt(f, delimiter=',', dtype=np.uint8)
     x = test[:, :-1]
+    x = np.hstack((x, np.apply_along_axis(edge_detector, 1, x)))
     x = x / 255
+    
     preds = nn.predict(x)[1]
     np.savetxt(args.outputfile, preds, fmt='%i')
 
