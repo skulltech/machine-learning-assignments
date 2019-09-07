@@ -42,7 +42,7 @@ class NeuralNetwork:
         delta = (pred - y)
         
         i = len(self.weights) - 1
-        for weight, bias, activ in (zip(reversed(self.weights), reversed(self.biases), reversed(activs[:-1]))):
+        for weight, bias, activ in zip(reversed(self.weights), reversed(self.biases), reversed(activs[:-1])):
             dW = activ.T @ delta
             dB = np.sum(delta, axis=0, keepdims=True)
             delta = (delta @ weight.T) * (1 - activ) * activ
