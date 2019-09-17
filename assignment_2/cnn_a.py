@@ -46,7 +46,7 @@ def keras_cnn(args):
     model.add(MaxPooling2D(pool_size=(2, 2), strides=1, padding='same'))
     model.add(Flatten())
     model.add(Dense(512, activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'))
-    model.add(Dense(218, activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'))
+    model.add(Dense(256, activation='relu', kernel_initializer='he_normal', bias_initializer='he_normal'))
     model.add(Dense(10, kernel_initializer='he_normal', bias_initializer='he_normal'))
     model.add(BatchNormalization())
     model.add(Activation('softmax'))

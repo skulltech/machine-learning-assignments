@@ -1,3 +1,5 @@
 numpy
 scikit-learn
 scikit-image
+keras
+tensorflow
