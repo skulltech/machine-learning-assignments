@@ -8,7 +8,7 @@ from copy import deepcopy
 import numpy as np
 
 CONTINOUS_COLUMNS = [0, 2, 3, 9, 10, 11]
-TTL = 100
+TTL = 30
 
 
 class Node:
@@ -57,7 +57,7 @@ def entropy(xd, y, continuous, label=None):
     return entropy, indicesl, median, unqs
 
 
-def create_tree(x, y, splitted, labels):
+def create_tree(x, y, labels):
     # print(x.shape[0], 'rows.')
     ents = []
     indicesll = []
@@ -71,25 +71,19 @@ def create_tree(x, y, splitted, labels):
         medians.append(median)
         unqsl.append(unqs)
 
+    minent = min(ents)
     vals, cnts = np.unique(y, return_counts=True)
     prediction = vals[np.argmax(cnts)]
-    filtered = list(filter(lambda x: not (x not in CONTINOUS_COLUMNS and x in splitted), ents))
-    
-    if not len(filtered):
-        # print('Leaf node.')
-        node = Node(prediction=prediction)
-        return node
-
-    minent = min(filtered)
-    column = ents.index(minent)
-    indicesl = indicesll[column]
-    median = medians[column]
-    unqs = unqsl[column]
     
     if not minent or len(list(filter(lambda x: x.shape[0] > 0, indicesl))) < 2:
         # print('Leaf node.')
         node = Node(prediction=prediction)
         return node
+
+    column = ents.index(minent)
+    indicesl = indicesll[column]
+    median = medians[column]
+    unqs = unqsl[column]
 
     # print('[*] Splitting by column', column, ':', labels[column])
     # print('[*] Number of branches :', len(indicesl))
@@ -97,7 +91,7 @@ def create_tree(x, y, splitted, labels):
     node = Node(prediction=prediction, column=column, continuous=column in CONTINOUS_COLUMNS, median=median, unqs=unqs)
     for indices in indicesl:
         indices = indices.flatten()
-        child = create_tree(x[indices, :], y[indices, :], splitted + [column], labels)
+        child = create_tree(x[indices, :], y[indices, :], labels)
         node.children.append(child)
     
     if len(node.children) < 2:
@@ -106,16 +100,6 @@ def create_tree(x, y, splitted, labels):
         node.median = None
     
     return node
-
-
-def visualize(tree, height, labels): 
-    if tree.column != None:
-        print('  '*height, labels[tree.column])
-    else:
-        print('  '*height, 'Leaf')
-    for child in tree.children:
-        visualize(child, height + 1, labels)
-    return
 
 
 def height(tree):
@@ -155,6 +139,7 @@ def predict(tree, x, y=None):
     return preds, accuracy
 
 
+
 def prune(tree, nb):
     copied = deepcopy(tree)
     count = 0
@@ -186,7 +171,7 @@ def optimize(tree, x, y, begin):
                 return best_tree
 
             pruned = prune(global_best_tree, i)
-            print(f'[*] Pruned node {i}. Height: {height(pruned)}. Nodes: {cnodes(pruned)}.')
+            # print(f'[*] Pruned node {i}. Height: {height(pruned)}. Nodes: {cnodes(pruned)}.')
             accr = predict(pruned, x, y)[1]
             if accr > best_accr:
                 best_accr = accr
@@ -210,9 +195,9 @@ def dt(args):
     y = y.astype(np.uint8)
     labels = train[0, :]
 
-    tree = create_tree(x, y, [], labels)
+    tree = create_tree(x, y, labels)
     print(f'[*] Tree created. Height: {height(tree)}. Nodes: {cnodes(tree)}.')
-    # visualize(tree, 0, labels)
+
     
     with open(args.validfile) as f:
         valid = np.loadtxt(f, delimiter=',', dtype=object)
