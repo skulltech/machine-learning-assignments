@@ -16,28 +16,30 @@ class NaiveBayes:
 
     @staticmethod
     def process(r):
-        return r.translate(str.maketrans(string.punctuation, ' ' * len(string.punctuation))).lower().split()
+        return set(r.translate(str.maketrans(string.punctuation, ' ' * len(string.punctuation))).lower().split())
 
     def train(self, reviews):
         for r, l in reviews:
+            if not l:
+                self.count0 = self.count0 + 1
+            else:
+                self.count1 = self.count1 + 1
             ws = self.process(r)
             for word in ws:
                 if not l:
-                    self.dict0[word] = self.dict0[word] + 1 if word in self.dict0 else 0
-                    self.count0 = self.count0 + 1
+                    self.dict0[word] = self.dict0[word] + 1 if word in self.dict0 else 1
                 else:
-                    self.dict1[word] = self.dict1[word] + 1 if word in self.dict1 else 0
-                    self.count1 = self.count1 + 1
+                    self.dict1[word] = self.dict1[word] + 1 if word in self.dict1 else 1
         self.samples = len(reviews)
         self.vocabulary = len({**self.dict0, **self.dict1})
 
     def predict(self, review):
         review = self.process(review)
-        p0 = self.count0 / self.samples
-        p1 = self.count1 / self.samples
+        p0 = np.log(self.count0 / self.samples)
+        p1 = np.log(self.count1 / self.samples)
         for word in review:
-            p0 = p0 * (self.dict0.get(word, 0) + 1) / (self.count0 + self.vocabulary + 1)
-            p1 = p1 * (self.dict1.get(word, 0) + 1) / (self.count1 + self.vocabulary + 1)
+            p0 = p0 + np.log((self.dict0.get(word, 0) + 1) / (self.count0 + self.vocabulary + 1))
+            p1 = p1 + np.log((self.dict1.get(word, 0) + 1) / (self.count1 + self.vocabulary + 1))
         return 0 if p0 > p1 else 1
 
 
@@ -55,6 +57,7 @@ def naive_bayes(args):
 
     model = NaiveBayes()
     model.train(reviews)
+    print('[*] Training complete.')
 
     with open(args.testfile, 'r', encoding='UTF-8') as f:
         test = f.readlines()
